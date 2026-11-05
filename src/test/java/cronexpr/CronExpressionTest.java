@@ -19,6 +19,8 @@ public final class CronExpressionTest {
         testInvalidField();
         testInvalidFieldCount();
         testInvalidHour();
+        testQuestionMarkWildcard();
+        testSundayAsSeven();
 
         if (failures == 0) {
             System.out.println("All tests passed.");
@@ -94,11 +96,25 @@ public final class CronExpressionTest {
     }
 
     private static void testInvalidFieldCount() {
-        expectThrow(() -> CronExpression.parse("* * * *");
+        expectThrow(() -> CronExpression.parse("* * * *"));
     }
 
     private static void testInvalidHour() {
         expectThrow(() -> CronExpression.parse("0 24 * * *"));
+    }
+
+    private static void testQuestionMarkWildcard() {
+        CronExpression cron = CronExpression.parse("0 0 ? * ?");
+        List<ZonedDateTime> runs = cron.next(utc("2025-01-01T12:00:00"), 2);
+        check("question-mark wildcard",
+                runs.get(0).equals(utc("2025-01-02T00:00:00"))
+                        && runs.get(1).equals(utc("2025-01-03T00:00:00")));
+    }
+
+    private static void testSundayAsSeven() {
+        CronExpression cron = CronExpression.parse("0 0 * * 7");
+        List<ZonedDateTime> runs = cron.next(utc("2025-01-04T12:00:00"), 1);
+        check("sunday as seven", runs.get(0).equals(utc("2025-01-05T00:00:00")));
     }
 
     private static ZonedDateTime utc(String value) {

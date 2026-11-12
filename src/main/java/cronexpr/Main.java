@@ -1,5 +1,6 @@
 package cronexpr;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -99,9 +100,13 @@ public final class Main {
             } catch (DateTimeParseException ignored) {
                 try {
                     start = LocalDateTime.parse(from).atZone(zoneId);
-                } catch (DateTimeParseException e) {
-                    fail("invalid start time: " + from);
-                    return;
+                } catch (DateTimeParseException ignoredAgain) {
+                    try {
+                        start = LocalDate.parse(from).atStartOfDay(zoneId);
+                    } catch (DateTimeParseException e) {
+                        fail("invalid start time: " + from);
+                        return;
+                    }
                 }
             }
         }

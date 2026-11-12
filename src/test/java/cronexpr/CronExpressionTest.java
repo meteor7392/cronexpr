@@ -21,6 +21,14 @@ public final class CronExpressionTest {
         testInvalidHour();
         testQuestionMarkWildcard();
         testSundayAsSeven();
+        testHourlyAlias();
+        testQuestionMarkDayOfMonth();
+        testBothRestrictedOr();
+        testSteppedWeekdays();
+        testMatches();
+        testNextAfterExclusive();
+        testInvalidStep();
+        testInvalidRange();
 
         if (failures == 0) {
             System.out.println("All tests passed.");
@@ -115,6 +123,51 @@ public final class CronExpressionTest {
         CronExpression cron = CronExpression.parse("0 0 * * 7");
         List<ZonedDateTime> runs = cron.next(utc("2025-01-04T12:00:00"), 1);
         check("sunday as seven", runs.get(0).equals(utc("2025-01-05T00:00:00")));
+    }
+
+    private static void testHourlyAlias() {
+        CronExpression cron = CronExpression.parse("@hourly");
+        List<ZonedDateTime> runs = cron.next(utc("2025-01-01T00:30:00"), 1);
+        check("hourly alias", runs.get(0).equals(utc("2025-01-01T01:00:00")));
+    }
+
+    private static void testQuestionMarkDayOfMonth() {
+        CronExpression cron = CronExpression.parse("0 0 ? * 1");
+        List<ZonedDateTime> runs = cron.next(utc("2025-01-05T12:00:00"), 1);
+        check("question-mark day-of-month", runs.get(0).equals(utc("2025-01-06T00:00:00")));
+    }
+
+    private static void testBothRestrictedOr() {
+        CronExpression cron = CronExpression.parse("0 0 15 * 1");
+        List<ZonedDateTime> runs = cron.next(utc("2025-01-01T12:00:00"), 1);
+        check("both restricted or", runs.get(0).equals(utc("2025-01-06T00:00:00")));
+    }
+
+    private static void testSteppedWeekdays() {
+        CronExpression cron = CronExpression.parse("0 0 * * 1-5/2");
+        List<ZonedDateTime> runs = cron.next(utc("2025-01-05T12:00:00"), 1);
+        check("stepped weekdays", runs.get(0).equals(utc("2025-01-06T00:00:00")));
+    }
+
+    private static void testMatches() {
+        CronExpression cron = CronExpression.parse("0 9 * * 1-5");
+        ZonedDateTime matching = utc("2025-01-01T09:00:00");
+        ZonedDateTime notMatching = matching.plusMinutes(1);
+        check("matches", cron.matches(matching) && !cron.matches(notMatching));
+    }
+
+    private static void testNextAfterExclusive() {
+        CronExpression cron = CronExpression.parse("0 9 * * 1-5");
+        check("nextAfter exclusive",
+                cron.nextAfter(utc("2025-01-01T09:00:00")).equals(utc("2025-01-02T09:00:00")));
+    }
+
+    private static void testInvalidStep() {
+        expectThrow(() -> CronExpression.parse("*/0 * * * *"));
+    }
+
+    private static void testInvalidRange() {
+        expectThrow(() -> CronExpression.parse("5-3 * * * *"));
     }
 
     private static ZonedDateTime utc(String value) {

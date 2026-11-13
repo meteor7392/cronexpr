@@ -58,6 +58,9 @@ public final class CronExpression {
     }
 
     public boolean matches(ZonedDateTime time) {
+        if (time == null) {
+            throw new IllegalArgumentException("time cannot be null");
+        }
         if (!minute.contains(time.getMinute())) {
             return false;
         }

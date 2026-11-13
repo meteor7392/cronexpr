@@ -1,5 +1,6 @@
 package cronexpr;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -95,19 +96,10 @@ public final class Main {
         if (from == null) {
             start = ZonedDateTime.now(zoneId);
         } else {
-            try {
-                start = ZonedDateTime.parse(from);
-            } catch (DateTimeParseException ignored) {
-                try {
-                    start = LocalDateTime.parse(from).atZone(zoneId);
-                } catch (DateTimeParseException ignoredAgain) {
-                    try {
-                        start = LocalDate.parse(from).atStartOfDay(zoneId);
-                    } catch (DateTimeParseException e) {
-                        fail("invalid start time: " + from);
-                        return;
-                    }
-                }
+            start = parseStart(from, zoneId);
+            if (start == null) {
+                fail("invalid start time: " + from);
+                return;
             }
         }
 
@@ -115,6 +107,37 @@ public final class Main {
         for (ZonedDateTime run : cron.next(start, count)) {
             System.out.println(run.format(formatter));
         }
+    }
+
+    private static ZonedDateTime parseStart(String from, ZoneId zoneId) {
+        try {
+            return ZonedDateTime.parse(from);
+        } catch (DateTimeParseException ignored) {
+        }
+        try {
+            return Instant.parse(from).atZone(zoneId);
+        } catch (DateTimeParseException ignored) {
+        }
+        try {
+            return LocalDateTime.parse(from).atZone(zoneId);
+        } catch (DateTimeParseException ignored) {
+        }
+        String[] patterns = {
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd HH:mm",
+                "yyyy-MM-dd HH:mm:ss.SSS"
+        };
+        for (String pattern : patterns) {
+            try {
+                return LocalDateTime.parse(from, DateTimeFormatter.ofPattern(pattern)).atZone(zoneId);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+        try {
+            return LocalDate.parse(from).atStartOfDay(zoneId);
+        } catch (DateTimeParseException ignored) {
+        }
+        return null;
     }
 
     private static void usage() {

@@ -29,6 +29,12 @@ public final class CronExpressionTest {
         testNextAfterExclusive();
         testInvalidStep();
         testInvalidRange();
+        testCountZero();
+        testLeapDay();
+        testImpossibleCombination();
+        testMatchesNull();
+        testNextNull();
+        testParseNull();
 
         if (failures == 0) {
             System.out.println("All tests passed.");
@@ -168,6 +174,46 @@ public final class CronExpressionTest {
 
     private static void testInvalidRange() {
         expectThrow(() -> CronExpression.parse("5-3 * * * *"));
+    }
+
+    private static void testCountZero() {
+        CronExpression cron = CronExpression.parse("* * * * *");
+        List<ZonedDateTime> runs = cron.next(utc("2025-01-01T00:00:00"), 0);
+        check("count zero", runs.isEmpty());
+    }
+
+    private static void testLeapDay() {
+        CronExpression cron = CronExpression.parse("0 0 29 2 *");
+        List<ZonedDateTime> first = cron.next(utc("2024-01-01T00:00:00"), 1);
+        List<ZonedDateTime> second = cron.next(utc("2024-03-01T00:00:00"), 1);
+        check("leap day",
+                first.get(0).equals(utc("2024-02-29T00:00:00"))
+                        && second.get(0).equals(utc("2028-02-29T00:00:00")));
+    }
+
+    private static void testImpossibleCombination() {
+        CronExpression cron = CronExpression.parse("0 0 31 2 *");
+        boolean threw = false;
+        try {
+            cron.next(utc("2025-01-01T00:00:00"), 1);
+        } catch (RuntimeException e) {
+            threw = true;
+        }
+        check("impossible combination throws", threw);
+    }
+
+    private static void testMatchesNull() {
+        CronExpression cron = CronExpression.parse("* * * * *");
+        expectThrow(() -> cron.matches(null));
+    }
+
+    private static void testNextNull() {
+        CronExpression cron = CronExpression.parse("* * * * *");
+        expectThrow(() -> cron.next(null, 1));
+    }
+
+    private static void testParseNull() {
+        expectThrow(() -> CronExpression.parse(null));
     }
 
     private static ZonedDateTime utc(String value) {

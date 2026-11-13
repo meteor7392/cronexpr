@@ -15,8 +15,16 @@ public final class CronField {
     private final boolean wildcard;
 
     public CronField(int min, int max, SortedSet<Integer> values, boolean wildcard) {
+        if (min > max) {
+            throw new IllegalArgumentException("cron field minimum cannot exceed maximum");
+        }
         if (values == null || values.isEmpty()) {
             throw new IllegalArgumentException("cron field cannot be empty");
+        }
+        for (int value : values) {
+            if (value < min || value > max) {
+                throw new IllegalArgumentException("cron field value out of range: " + value);
+            }
         }
         this.min = min;
         this.max = max;
@@ -29,7 +37,7 @@ public final class CronField {
     }
 
     public SortedSet<Integer> values() {
-        return values;
+        return new TreeSet<>(values);
     }
 
     public boolean wildcard() {

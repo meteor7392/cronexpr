@@ -1,6 +1,7 @@
 package cronexpr;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,15 +80,13 @@ public final class CronExpression {
         }
 
         ZonedDateTime time = from.withSecond(0).withNano(0).plusMinutes(1);
+        boolean dayOfMonthOnly = dayOfMonthRestricted && !dayOfWeekRestricted;
         int guard = 0;
         while (guard++ < 1_000_000) {
-            if (!month.contains(time.getMonthValue())) {
-                time = time.withDayOfMonth(1)
-                        .withHour(0)
-                        .withMinute(0)
-                        .withSecond(0)
-                        .withNano(0)
-                        .plusMonths(1);
+            boolean monthValid = month.contains(time.getMonthValue())
+                    && (!dayOfMonthOnly || possibleDayOfMonth(time.getMonthValue(), dayOfMonth));
+            if (!monthValid) {
+                time = nextValidMonth(time, month, dayOfMonth, dayOfMonthOnly);
                 continue;
             }
 
@@ -147,6 +146,9 @@ public final class CronExpression {
     }
 
     public List<ZonedDateTime> next(ZonedDateTime from, int count) {
+        if (from == null) {
+            throw new IllegalArgumentException("start time cannot be null");
+        }
         if (count < 0) {
             throw new IllegalArgumentException("count cannot be negative");
         }
@@ -227,5 +229,35 @@ public final class CronExpression {
             names.put(full.substring(0, 3), i);
         }
         return names;
+    }
+
+    private static boolean possibleDayOfMonth(int monthValue, CronField field) {
+        int maxDay = YearMonth.of(2000, monthValue).lengthOfMonth();
+        for (int value : field.values()) {
+            if (value <= maxDay) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static ZonedDateTime nextValidMonth(ZonedDateTime time, CronField month,
+                                               CronField dayOfMonth, boolean dayOfMonthOnly) {
+        ZonedDateTime cursor = time.withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+        for (int i = 0; i < 12; i++) {
+            cursor = cursor.plusMonths(1);
+            if (!month.contains(cursor.getMonthValue())) {
+                continue;
+            }
+            if (dayOfMonthOnly && !possibleDayOfMonth(cursor.getMonthValue(), dayOfMonth)) {
+                continue;
+            }
+            return cursor;
+        }
+        throw new IllegalStateException("unable to find a matching cron time");
     }
 }

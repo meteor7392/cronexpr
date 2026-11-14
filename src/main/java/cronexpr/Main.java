@@ -3,12 +3,14 @@ package cronexpr;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class Main {
     private Main() {
@@ -115,6 +117,10 @@ public final class Main {
         } catch (DateTimeParseException ignored) {
         }
         try {
+            return OffsetDateTime.parse(from).atZoneSameInstant(zoneId);
+        } catch (DateTimeParseException ignored) {
+        }
+        try {
             return Instant.parse(from).atZone(zoneId);
         } catch (DateTimeParseException ignored) {
         }
@@ -129,7 +135,7 @@ public final class Main {
         };
         for (String pattern : patterns) {
             try {
-                return LocalDateTime.parse(from, DateTimeFormatter.ofPattern(pattern)).atZone(zoneId);
+                return LocalDateTime.parse(from, DateTimeFormatter.ofPattern(pattern, Locale.ROOT)).atZone(zoneId);
             } catch (DateTimeParseException ignored) {
             }
         }

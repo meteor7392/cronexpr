@@ -84,7 +84,8 @@ public final class CronExpression {
         int guard = 0;
         while (guard++ < 1_000_000) {
             boolean monthValid = month.contains(time.getMonthValue())
-                    && (!dayOfMonthOnly || possibleDayOfMonth(time.getMonthValue(), dayOfMonth));
+                    && (!dayOfMonthOnly || possibleDayOfMonth(time.getYear(),
+                            time.getMonthValue(), dayOfMonth));
             if (!monthValid) {
                 time = nextValidMonth(time, month, dayOfMonth, dayOfMonthOnly);
                 continue;
@@ -231,8 +232,8 @@ public final class CronExpression {
         return names;
     }
 
-    private static boolean possibleDayOfMonth(int monthValue, CronField field) {
-        int maxDay = YearMonth.of(2000, monthValue).lengthOfMonth();
+    private static boolean possibleDayOfMonth(int year, int monthValue, CronField field) {
+        int maxDay = YearMonth.of(year, monthValue).lengthOfMonth();
         for (int value : field.values()) {
             if (value <= maxDay) {
                 return true;
@@ -253,7 +254,8 @@ public final class CronExpression {
             if (!month.contains(cursor.getMonthValue())) {
                 continue;
             }
-            if (dayOfMonthOnly && !possibleDayOfMonth(cursor.getMonthValue(), dayOfMonth)) {
+            if (dayOfMonthOnly && !possibleDayOfMonth(cursor.getYear(),
+                    cursor.getMonthValue(), dayOfMonth)) {
                 continue;
             }
             return cursor;

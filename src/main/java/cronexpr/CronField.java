@@ -2,6 +2,7 @@ package cronexpr;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -157,5 +158,25 @@ public final class CronField {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("invalid step value: " + text, e);
         }
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof CronField)) {
+            return false;
+        }
+        CronField that = (CronField) other;
+        return min == that.min
+                && max == that.max
+                && wildcard == that.wildcard
+                && values.equals(that.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(min, max, values, wildcard);
     }
 }

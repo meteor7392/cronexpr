@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A parsed five-field cron expression.
@@ -24,6 +25,10 @@ public final class CronExpression {
 
     private CronExpression(CronField minute, CronField hour, CronField dayOfMonth,
                            CronField month, CronField dayOfWeek) {
+        if (minute == null || hour == null || dayOfMonth == null
+                || month == null || dayOfWeek == null) {
+            throw new IllegalArgumentException("cron expression fields cannot be null");
+        }
         this.minute = minute;
         this.hour = hour;
         this.dayOfMonth = dayOfMonth;
@@ -261,5 +266,26 @@ public final class CronExpression {
             return cursor;
         }
         throw new IllegalStateException("unable to find a matching cron time");
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof CronExpression)) {
+            return false;
+        }
+        CronExpression that = (CronExpression) other;
+        return minute.equals(that.minute)
+                && hour.equals(that.hour)
+                && dayOfMonth.equals(that.dayOfMonth)
+                && month.equals(that.month)
+                && dayOfWeek.equals(that.dayOfWeek);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(minute, hour, dayOfMonth, month, dayOfWeek);
     }
 }
